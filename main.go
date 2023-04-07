@@ -1,11 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"proxy-browser/metadata"
 )
 
 func main() {
-	baseURL := "http://example.com/proxy?{0}"
-	metadata.Initialise()
-	metadata.EnumerateAWS(baseURL, metadata.PassthroughEncoder).ToFile(metadata.DefaultOutputPath.AWS)
+	if len(os.Args) < 2 {
+		fmt.Println("\033[31m[!]\033[0m Expected platform (aws, gcp or azure).")
+		os.Exit(1)
+	}
+	metadata.SelectPlatform(os.Args[1])
+	metadata.SelectedPlatform.Enumerate(metadata.BaseURL, metadata.AllVersions, metadata.PassthroughEncoder, metadata.OutPath)
 }
