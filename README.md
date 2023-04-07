@@ -4,6 +4,8 @@ A cloud metadata enumeration and scraping tool used in conjunction with an explo
 
 Written as a personal tooling project to get more familiar with Go
 
+![proxyaws](https://user-images.githubusercontent.com/10473238/230639960-e085d414-fc5d-467e-9ba4-788d6c0fd06e.gif)
+
 ## Installation
 
 ### Installing from Source
