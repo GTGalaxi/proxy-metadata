@@ -1,4 +1,3 @@
 main_test.go
-proxy-browser.exe
-.proxy-browser.exe
+proxy-metadata.exe
 out/

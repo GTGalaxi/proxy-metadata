@@ -1,3 +1,3 @@
-module .proxy-browser
+module github.com/GTGalaxi/proxy-metadata
 
 go 1.20

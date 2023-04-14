@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	".proxy-browser/metadata"
+	"github.com/GTGalaxi/proxy-metadata/metadata"
 )
 
 func main() {
