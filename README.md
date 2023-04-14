@@ -1,5 +1,7 @@
 # Proxy Browser
 
+![Go Build](https://github.com/GTGalaxi/proxy-metadata/actions/workflows/go.yml/badge.svg) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/GTGalaxi/proxy-metadata) <a href="https://github.com/GTGalaxi/proxy-metadata/releases">![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/GTGalaxi/proxy-metadata?include_prereleases)
+
 A cloud metadata enumeration and scraping tool used in conjunction with an exploited SSRF through a web proxy. It currently supports AWS, with GCP and Azure to be implemented.
 
 Written as a personal tooling project to get more familiar with Go
