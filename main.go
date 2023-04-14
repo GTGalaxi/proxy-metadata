@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"proxy-browser/metadata"
+
+	".proxy-browser/metadata"
 )
 
 func main() {
