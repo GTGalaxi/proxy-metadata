@@ -17,6 +17,20 @@ var BaseURL string
 var OutPath string
 var AllVersions bool
 
+// Metadata file structure
+
+type Directory struct {
+	Path     string
+	Children []interface{}
+}
+
+type File struct {
+	Path  string
+	Value string
+}
+
+// ---
+
 // Types and Function for platform implementation and handling
 
 type Platform struct {

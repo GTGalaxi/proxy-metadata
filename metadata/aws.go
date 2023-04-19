@@ -6,24 +6,6 @@ import (
 	"strings"
 )
 
-// AWS Metadata file structure
-
-type AWSStructure struct {
-	Children []interface{}
-}
-
-type Directory struct {
-	Path     string
-	Children []interface{}
-}
-
-type File struct {
-	Path  string
-	Value string
-}
-
-// ---
-
 // Local Variables
 
 var _proxyUrl string
@@ -74,14 +56,16 @@ func EnumerateAWS(proxyUrl string, allVersions bool, encoder Encoder) (jsonStruc
 	awsBanner()
 
 	// Instantiate new AWSStructure
-	awss := new(AWSStructure)
+	awss := new(Directory)
 	awss.Children = make([]interface{}, 0)
 
 	// Specify if recursive fetch will search all version or just 'latest/'
 	if allVersions {
-		recursiveFetch(0, "", &awss.Children)
+		awss.Path = ""
+		recursiveFetch(0, awss)
 	} else {
-		recursiveFetch(1, "latest/", &awss.Children)
+		awss.Path = "latest/"
+		recursiveFetch(1, awss)
 	}
 
 	fmt.Printf("\r\033[32m[+]\033[0m Enumeration Complete!\033[K\n")
@@ -97,8 +81,8 @@ func EnumerateAWS(proxyUrl string, allVersions bool, encoder Encoder) (jsonStruc
 
 // Function that recursively fetches metadata categories and appends their data to the directory structure
 
-func recursiveFetch(depth int, path string, parent *[]interface{}) {
-	status, items := fetchProxyData(_proxyUrl, AWS.MetadataEndpoint+path)
+func recursiveFetch(depth int, parent *Directory) {
+	status, items := fetchProxyData(_proxyUrl, AWS.MetadataEndpoint+parent.Path)
 	// Do nothing if status is not '200 OK'
 	if status == "200 OK" {
 		for _, item := range items {
@@ -112,7 +96,7 @@ func recursiveFetch(depth int, path string, parent *[]interface{}) {
 			if Verbose {
 				nl = "\n"
 			}
-			fmt.Printf(spin() + " Enumerating: " + path + item + nl)
+			fmt.Printf(spin() + " Enumerating: " + parent.Path + item + nl)
 
 			// Check if item is a directory or a file
 			if strings.HasSuffix(item, "/") {
@@ -122,21 +106,21 @@ func recursiveFetch(depth int, path string, parent *[]interface{}) {
 
 				// Might also be useful for multi-threading the items loop?
 				self := new(Directory)
-				self.Path = path + item
+				self.Path = parent.Path + item
 				self.Children = make([]interface{}, 0)
-				*parent = append(*parent, &self)
-				recursiveFetch(depth+1, self.Path, &self.Children)
+				parent.Children = append(parent.Children, self)
+				recursiveFetch(depth+1, self)
 			} else {
 				// Create a new File object, populate values and append to pointer of parent's Children variable
 				self := new(File)
-				self.Path = path + item
+				self.Path = parent.Path + item
 				status, contents := fetchProxyData(_proxyUrl, AWS.MetadataEndpoint+self.Path)
 				if status == "200 OK" {
 					self.Value = strings.Join(contents, "\n")
 				} else {
 					self.Value = "404"
 				}
-				*parent = append(*parent, &self)
+				parent.Children = append(parent.Children, &self)
 			}
 		}
 	}
